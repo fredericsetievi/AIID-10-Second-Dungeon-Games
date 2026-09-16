@@ -1,0 +1,270 @@
+/* =========================================================================
+   10-Second Dungeon - stylesheet
+   Dark dungeon palette, amber accents, monospace "pixel" typography.
+   ========================================================================= */
+
+:root {
+  --bg:            #0b0e17;
+  --bg-deep:       #05070d;
+  --panel:         #151b2b;
+  --panel-edge:    #2b3550;
+  --text:          #e6ecff;
+  --text-dim:      #8b97b8;
+  --accent:        #ffc857;
+  --accent-dark:   #c9962c;
+  --danger:        #ff5f6d;
+  --good:          #5ce08a;
+  --font: "Courier New", "DejaVu Sans Mono", Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: radial-gradient(circle at 50% 0%, #131a2c 0%, var(--bg-deep) 70%);
+  color: var(--text);
+  font-family: var(--font);
+  overflow: hidden;
+}
+
+/* ---------- Stage: keeps the 800x480 (5:3) canvas responsive ---------- */
+#stage {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
+
+#frame {
+  position: relative;
+  /* 800/480 = 5/3 -> preserve aspect ratio on any viewport */
+  width: min(100%, (100vh - 24px) * 5 / 3);
+  aspect-ratio: 5 / 3;
+  max-width: 1200px;
+  border: 3px solid var(--panel-edge);
+  border-radius: 6px;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+  background: #05070d;
+  overflow: hidden;
+}
+
+canvas#gameCanvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* ---------- Overlay & screens ---------- */
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.overlay .screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(5, 7, 13, 0.82);
+  backdrop-filter: blur(2px);
+  pointer-events: auto;
+  animation: fade-in 0.16s ease-out;
+}
+
+.overlay .screen[hidden] { display: none; }
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.panel {
+  width: min(88%, 620px);
+  padding: 22px 26px 26px;
+  background: linear-gradient(180deg, #1a2135 0%, #121828 100%);
+  border: 2px solid var(--panel-edge);
+  border-radius: 8px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+  text-align: center;
+}
+
+/* ---------- Typography ---------- */
+.title {
+  margin: 4px 0 2px;
+  font-size: clamp(22px, 5.2vw, 42px);
+  letter-spacing: 3px;
+  color: var(--accent);
+  text-shadow: 0 3px 0 #7a5a12, 0 0 22px rgba(255, 200, 87, 0.25);
+}
+
+.tagline {
+  margin: 0 0 18px;
+  color: var(--text-dim);
+  font-size: clamp(11px, 2.2vw, 15px);
+  letter-spacing: 2px;
+}
+
+.heading {
+  margin: 2px 0 14px;
+  font-size: clamp(18px, 4vw, 30px);
+  letter-spacing: 3px;
+  color: var(--text);
+}
+
+.heading.danger { color: var(--danger); }
+
+.reason {
+  margin: 0 0 16px;
+  font-size: clamp(12px, 2.6vw, 17px);
+  color: var(--accent);
+  letter-spacing: 1px;
+}
+
+.hint {
+  margin: 10px 0 16px;
+  color: var(--text-dim);
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+
+.rules {
+  margin: 0 auto 8px;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+  max-width: 460px;
+  font-size: clamp(11px, 2.4vw, 15px);
+  line-height: 1.9;
+}
+
+.rules li { color: var(--text-dim); }
+.rules li b { color: var(--text); }
+
+/* ---------- Buttons ---------- */
+.btn-row {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.btn-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: stretch;
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+.btn {
+  font-family: var(--font);
+  font-size: clamp(11px, 2.2vw, 15px);
+  font-weight: bold;
+  letter-spacing: 2px;
+  color: var(--text);
+  background: #232c46;
+  border: 2px solid #38456a;
+  border-radius: 5px;
+  padding: 11px 20px;
+  cursor: pointer;
+  transition: transform 0.06s ease, background 0.12s ease, border-color 0.12s ease;
+  user-select: none;
+}
+
+.btn:hover { background: #2d3854; border-color: #4b5b88; }
+.btn:active { transform: translateY(2px); }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.btn-primary {
+  color: #241a02;
+  background: linear-gradient(180deg, var(--accent) 0%, var(--accent-dark) 100%);
+  border-color: #f0dfa5;
+}
+
+.btn-primary:hover { background: linear-gradient(180deg, #ffd66e 0%, #d9a530 100%); }
+
+.btn-toggle {
+  font-size: clamp(9px, 1.8vw, 12px);
+  padding: 7px 12px;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+
+.btn-toggle.on { color: var(--good); border-color: #2f6b46; }
+
+.toggles {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+/* ---------- Stats ---------- */
+.stats {
+  display: flex;
+  gap: 22px;
+  justify-content: center;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+
+.stats-grid { margin-bottom: 18px; }
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 92px;
+}
+
+.stat-label {
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.stat-value {
+  font-size: clamp(15px, 3vw, 22px);
+  font-weight: bold;
+  color: var(--accent);
+}
+
+/* ---------- Boot error fallback ---------- */
+#boot-error {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(5, 7, 13, 0.95);
+  z-index: 50;
+}
+
+#boot-error[hidden] { display: none; }
+#boot-error .panel { text-align: left; }
+#boot-error p { font-size: 13px; color: var(--text-dim); line-height: 1.7; }
+#boot-error code { color: var(--accent); }
+
+#boot-error pre {
+  background: #0a0d16;
+  border: 1px solid var(--panel-edge);
+  border-radius: 4px;
+  padding: 10px 12px;
+  color: var(--good);
+  font-size: 13px;
+  overflow-x: auto;
+}

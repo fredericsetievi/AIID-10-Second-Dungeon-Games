@@ -1,0 +1,10 @@
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Dependencies (none required, but keeps things clean if you add tooling)
+node_modules/
+
+# Local logs
+*.log

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>10-Second Dungeon</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div id="stage">
+  <div id="frame">
+    <canvas id="gameCanvas" width="800" height="480" aria-label="10-Second Dungeon"></canvas>
+
+    <!-- ============ DOM overlay screens (menus / pause / game over) ============ -->
+    <div id="overlay" class="overlay">
+
+      <!-- MAIN MENU -->
+      <section class="screen" id="screen-MENU">
+        <div class="panel">
+          <h1 class="title">10&#8209;SECOND DUNGEON</h1>
+          <p class="tagline">Can you escape?</p>
+          <div class="btn-row">
+            <button class="btn btn-primary" data-action="play">PLAY</button>
+            <button class="btn" data-action="howto">HOW TO PLAY</button>
+          </div>
+          <div class="stats">
+            <div class="stat"><span class="stat-label">Best Score</span><span class="stat-value" id="menu-best-score">0</span></div>
+            <div class="stat"><span class="stat-label">Highest Level</span><span class="stat-value" id="menu-best-level">1</span></div>
+          </div>
+          <div class="toggles">
+            <button class="btn btn-toggle" data-action="toggle-sound" id="btn-sound">SOUND: ON</button>
+            <button class="btn btn-toggle" data-action="toggle-music" id="btn-music">MUSIC: OFF</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- HOW TO PLAY -->
+      <section class="screen" id="screen-HOWTO" hidden>
+        <div class="panel">
+          <h2 class="heading">HOW TO PLAY</h2>
+          <ul class="rules">
+            <li>You have only <b>10 seconds</b> per level.</li>
+            <li>Move with <b>WASD</b> or <b>Arrow Keys</b>.</li>
+            <li>Collect <b>coins</b> (+10) and <b>treasure</b> (+50).</li>
+            <li>Avoid <b>monsters</b> and <b>spike traps</b>.</li>
+            <li>Find the <b>exit</b> before time runs out.</li>
+          </ul>
+          <p class="hint">ESC pauses &middot; SPACE starts / continues</p>
+          <div class="btn-row">
+            <button class="btn btn-primary" data-action="back">BACK</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAUSED -->
+      <section class="screen" id="screen-PAUSED" hidden>
+        <div class="panel">
+          <h2 class="heading">PAUSED</h2>
+          <div class="btn-col">
+            <button class="btn btn-primary" data-action="resume">RESUME</button>
+            <button class="btn" data-action="restart">RESTART</button>
+            <button class="btn" data-action="menu">MAIN MENU</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- GAME OVER -->
+      <section class="screen" id="screen-GAME_OVER" hidden>
+        <div class="panel">
+          <h2 class="heading danger">GAME OVER</h2>
+          <p class="reason" id="gameover-reason">Time's up!</p>
+          <div class="stats stats-grid">
+            <div class="stat"><span class="stat-label">Level</span><span class="stat-value" id="gameover-level">1</span></div>
+            <div class="stat"><span class="stat-label">Score</span><span class="stat-value" id="gameover-score">0</span></div>
+            <div class="stat"><span class="stat-label">Best Score</span><span class="stat-value" id="gameover-best">0</span></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" data-action="again">PLAY AGAIN</button>
+            <button class="btn" data-action="menu">MAIN MENU</button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<!-- Friendly fallback: ES modules cannot load from file:// in most browsers -->
+<div id="boot-error" hidden>
+  <div class="panel">
+    <h2 class="heading danger">Could not load the game</h2>
+    <p>The game uses ES modules, which browsers block when a page is opened directly
+       from disk (<code>file://</code>). Start a tiny local server inside this folder:</p>
+    <pre>python -m http.server 8000</pre>
+    <p>then open <code>http://localhost:8000</code></p>
+  </div>
+</div>
+
+<script>
+  // If the module entry point never runs, surface a helpful message instead of a blank screen.
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      if (!window.__TSD_BOOTED__) {
+        var el = document.getElementById('boot-error');
+        if (el) el.hidden = false;
+      }
+    }, 1200);
+  });
+</script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
