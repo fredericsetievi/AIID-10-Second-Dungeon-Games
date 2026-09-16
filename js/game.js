@@ -37,6 +37,7 @@ const MAX_DELTA = 0.05;         // clamp huge frame gaps (tab switches)
 const LEVEL_COMPLETE_DURATION = 2.4;
 const DANGER_TIME = 3;          // timer emphasis threshold
 const HUD_HEIGHT = 40;
+const MAX_RENDER_SCALE = 3;     // cap output at 3x (2400x1440) to protect FPS
 
 /**
  * Difficulty curve.
@@ -160,7 +161,7 @@ export class Game {
     this.lastTickSecond = 99;
     this.shake = 0;
     this.elapsed = 0;
-    this.dpr = 1;
+    this.renderScale = 1;
 
     // Cached dungeon artwork
     this.dungeonCanvas = document.createElement('canvas');
@@ -171,7 +172,7 @@ export class Game {
     this.menuCoins = [];
     this.menuTime = 0;
 
-    this.vignette = null;
+    this.vignetteCanvas = null;
 
     this.resize();
     this._bindEvents();
@@ -180,49 +181,91 @@ export class Game {
 
   // ---------------------------------------------------------------- setup
 
-  /** Scale the backing store for HiDPI screens while keeping the 800x480 logic. */
+  /**
+   * Match the backing store to the canvas' real on-screen size in device
+   * pixels. Rendering 1:1 is what keeps the game sharp - letting the browser
+   * upscale a fixed 800x480 buffer is what makes it look soft and blurry.
+   *
+   * The game still thinks entirely in 800x480 logical units (WIDTH x HEIGHT).
+   * Only the pixel density of the output changes, so no gameplay code or
+   * layout maths is affected.
+   */
   resize() {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    this.dpr = dpr;
-    this.canvas.width = Math.round(WIDTH * dpr);
-    this.canvas.height = Math.round(HEIGHT * dpr);
 
-    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    // How many real device pixels we can use for each logical unit.
+    // Falls back to WIDTH when the canvas has not been laid out yet.
+    const cssWidth = this.canvas.clientWidth || WIDTH;
+    const scale = clamp((cssWidth / WIDTH) * dpr, 1, MAX_RENDER_SCALE);
+
+    // Skip the rebuild when nothing actually changed (resize events fire a lot).
+    if (this.canvas.width && Math.abs(scale - this.renderScale) < 0.01) return;
+
+    this.renderScale = scale;
+    this.canvas.width = Math.round(WIDTH * scale);
+    this.canvas.height = Math.round(HEIGHT * scale);
+
+    this.ctx.setTransform(scale, 0, 0, scale, 0, 0);
     this.ctx.imageSmoothingEnabled = false;
 
-    // Gradients are invalidated when the canvas resizes, so rebuild it.
-    this.vignette = this.ctx.createRadialGradient(
-      WIDTH / 2, HEIGHT / 2, HEIGHT * 0.35,
-      WIDTH / 2, HEIGHT / 2, HEIGHT * 0.85);
-    this.vignette.addColorStop(0, 'rgba(0,0,0,0)');
-    this.vignette.addColorStop(1, 'rgba(0,0,0,0.55)');
-
+    this._buildVignetteCache();
     if (this.dungeonGrid) this._buildDungeonCache(this.dungeonGrid);
     if (this.menuDungeon) this._buildMenuCache();
+  }
+
+  /**
+   * The vignette never changes, so it is baked once per resolution and blitted.
+   * At 3x that is a 2400x1440 full-screen gradient we no longer re-evaluate
+   * every single frame.
+   */
+  _buildVignetteCache() {
+    this.vignetteCanvas = this.vignetteCanvas || document.createElement('canvas');
+    const c = this.vignetteCanvas;
+    c.width = Math.round(WIDTH * this.renderScale);
+    c.height = Math.round(HEIGHT * this.renderScale);
+
+    const cx = c.getContext('2d');
+    cx.setTransform(this.renderScale, 0, 0, this.renderScale, 0, 0);
+    cx.clearRect(0, 0, WIDTH, HEIGHT);
+
+    const gradient = cx.createRadialGradient(
+      WIDTH / 2, HEIGHT / 2, HEIGHT * 0.35,
+      WIDTH / 2, HEIGHT / 2, HEIGHT * 0.85);
+    gradient.addColorStop(0, 'rgba(0,0,0,0)');
+    gradient.addColorStop(1, 'rgba(0,0,0,0.55)');
+
+    cx.fillStyle = gradient;
+    cx.fillRect(0, 0, WIDTH, HEIGHT);
   }
 
   _buildDungeonCache(grid) {
     this.dungeonGrid = grid;
     const c = this.dungeonCanvas;
-    c.width = Math.round(WIDTH * this.dpr);
-    c.height = Math.round(HEIGHT * this.dpr);
+    c.width = Math.round(WIDTH * this.renderScale);
+    c.height = Math.round(HEIGHT * this.renderScale);
     const cx = c.getContext('2d');
-    cx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    cx.setTransform(this.renderScale, 0, 0, this.renderScale, 0, 0);
     renderDungeonTo(cx, grid);
   }
 
   _buildMenuCache() {
     this.menuCanvas = this.menuCanvas || document.createElement('canvas');
     const c = this.menuCanvas;
-    c.width = Math.round(WIDTH * this.dpr);
-    c.height = Math.round(HEIGHT * this.dpr);
+    c.width = Math.round(WIDTH * this.renderScale);
+    c.height = Math.round(HEIGHT * this.renderScale);
     const cx = c.getContext('2d');
-    cx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    cx.setTransform(this.renderScale, 0, 0, this.renderScale, 0, 0);
     renderDungeonTo(cx, this.menuDungeon.grid);
   }
 
   _bindEvents() {
     window.addEventListener('resize', () => this.resize());
+
+    // The canvas is sized by CSS, so it can change size without any window
+    // event (panel resizes, zoom, layout shifts). Observe it directly.
+    if (typeof ResizeObserver !== 'undefined') {
+      new ResizeObserver(() => this.resize()).observe(this.canvas);
+    }
 
     window.addEventListener('keydown', (e) => this._onKeyDown(e));
     window.addEventListener('keyup', (e) => { this.keys[e.code] = false; });
@@ -744,9 +787,8 @@ export class Game {
   _renderMenuBackdrop(ctx) {
     if (this.menuCanvas) ctx.drawImage(this.menuCanvas, 0, 0, WIDTH, HEIGHT);
     for (const coin of this.menuCoins) coin.draw(ctx);
-    if (this.vignette) {
-      ctx.fillStyle = this.vignette;
-      ctx.fillRect(0, 0, WIDTH, HEIGHT);
+    if (this.vignetteCanvas) {
+      ctx.drawImage(this.vignetteCanvas, 0, 0, WIDTH, HEIGHT);
     }
   }
 
@@ -779,9 +821,8 @@ export class Game {
     }
     ctx.globalAlpha = 1;
 
-    if (this.vignette) {
-      ctx.fillStyle = this.vignette;
-      ctx.fillRect(0, 0, WIDTH, HEIGHT);
+    if (this.vignetteCanvas) {
+      ctx.drawImage(this.vignetteCanvas, 0, 0, WIDTH, HEIGHT);
     }
   }
 
