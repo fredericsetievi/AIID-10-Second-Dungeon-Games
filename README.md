@@ -6,7 +6,7 @@ treasure and reach the exit — then the next, harder dungeon generates.
 Built with plain HTML5, CSS3 and vanilla JavaScript (ES modules). No build step,
 no backend, no dependencies, no external assets.
 
-**[Play it in your browser](#)** *(GitHub Pages URL appears here once enabled)*
+**[Play it live](https://fredericsetievi.github.io/AIID-10-Second-Dungeon-Games/)**
 
 ## Running it locally
 
